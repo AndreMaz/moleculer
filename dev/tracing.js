@@ -1,5 +1,6 @@
 "use strict";
 
+/*
 const asyncHooks = require("async_hooks");
 
 const tracer = require("dd-trace").init({
@@ -11,7 +12,7 @@ const tracer = require("dd-trace").init({
 
 tracer.use("http");
 tracer.use("ioredis");
-
+*/
 
 const ServiceBroker = require("../src/service-broker");
 "use strict";
@@ -47,12 +48,12 @@ const broker = new ServiceBroker({
 					logger: console.info
 				}
 			},
-			{
+			/*{
 				type: "Datadog",
 				options: {
 					tracer
 				}
-			},
+			},*/
 			/*{
 				type: "Zipkin",
 				options: {
@@ -136,6 +137,9 @@ broker.createService({
 		},
 
 		find: {
+			tracing: {
+				spanName: "List all posts"
+			},
 			//cache: true,
 			async handler(ctx) {
 				const span1 = ctx.startSpan("cloning posts");
@@ -145,7 +149,7 @@ broker.createService({
 
 				const span2 = ctx.startSpan("populate posts");
 				//await this.Promise.delay(10);
-				const res = await this.Promise.map(posts, async post => {
+				const res = await this.Promise.mapSeries(posts, async post => {
 					const span3 = ctx.startSpan("populate #" + post.id, { tags: {
 						id: post.id
 					} });
@@ -161,7 +165,7 @@ broker.createService({
 					ctx.finishSpan(span3);
 
 					//return res;
-				}, { concurrency: 1 });
+				});
 
 				ctx.finishSpan(span2);
 
@@ -186,6 +190,7 @@ broker.createService({
 	actions: {
 		get: {
 			tracing: {
+				spanName: ctx => `Get user (ID: ${ctx.params.id})`,
 				tags: {
 					params: ["id"],
 					meta: ["loggedIn.username"],
@@ -297,7 +302,9 @@ broker.createService({
 			this.logger.info("Legacy tracing finish event received", ctx.params);
 		},
 		"user.access": {
-			tracing: true,
+			tracing: {
+				spanName: ctx => `User access event in '${ctx.service.fullName}' service`
+			},
 			async handler(ctx) {
 				this.logger.info("User access event received. It is sampled in tracing!");
 				const span = ctx.startSpan("get followers in event");

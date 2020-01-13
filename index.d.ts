@@ -89,7 +89,7 @@ declare namespace Moleculer {
 
 		startSpan(name: string, opts: GenericObject): Span;
 
-		getCurrentSpan(): Span | null;
+		//getCurrentSpan(): Span | null;
 		getCurrentTraceID(): string | null;
 		getActiveSpanID(): string | null;
 	}
@@ -353,6 +353,8 @@ declare namespace Moleculer {
 
 		metricNameFormatter?: (name: string) => string;
 		labelNameFormatter?: (name: string) => string;
+
+		[key: string]: any;
 	}
 
 	class MetricBaseReporter {
@@ -541,6 +543,7 @@ declare namespace Moleculer {
 
 	type ServiceMethods = { [key: string]: ((...args: any[]) => any) } & ThisType<Service>;
 
+	type CallMiddlewareHandler = (actionName: string, params: any, opts: CallingOptions) => PromiseLike<any>;
 	type Middleware = {
 		[name: string]:
 			| ((handler: ActionHandler, action: ActionSchema) => any)
@@ -548,6 +551,7 @@ declare namespace Moleculer {
 			| ((handler: ActionHandler) => any)
 			| ((service: Service) => any)
 			| ((broker: ServiceBroker) => any)
+			| ((handler: CallMiddlewareHandler) => CallMiddlewareHandler)
 	}
 
 	type MiddlewareInit = (broker: ServiceBroker) => Middleware & ThisType<ServiceBroker>;
@@ -606,7 +610,7 @@ declare namespace Moleculer {
 		logger: LoggerInstance;
 		actions: ServiceActions;
 		Promise: PromiseConstructorLike;
-		currentContext: Context | null;
+		//currentContext: Context | null;
 
 		_init(): void;
 		_start(): PromiseLike<void>;
@@ -803,6 +807,7 @@ declare namespace Moleculer {
 		requestID?: string;
 		tracking?: boolean;
 		paramsCloning?: boolean;
+		caller?: string;
 	}
 
 	type CallDefinition<P extends GenericObject = GenericObject> = {
@@ -920,8 +925,6 @@ declare namespace Moleculer {
 
 		getHealthStatus(): NodeHealthStatus;
 		getLocalNodeInfo(): BrokerNode;
-
-		currentContext: Context | null;
 
 		getCpuUsage(): PromiseLike<any>;
 		generateUid(): string;

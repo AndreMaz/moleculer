@@ -1,7 +1,6 @@
 "use strict";
 
 const { protectReject } = require("./utils");
-const Promise = require("bluebird");
 const ServiceBroker = require("../../src/service-broker");
 const Context = require("../../src/context");
 const Transit = require("../../src/transit");
@@ -444,6 +443,9 @@ describe("Test Transit.eventHandler", () => {
 		broker.emitLocalServices.mockClear();
 		broker.started = false;
 		transit.eventHandler({
+			id: "event-12345",
+			requestID: "event-req-12345",
+			parentID: "event-parent-67890",
 			event: "user.created",
 			data: { a: 5 },
 			groups: ["users"],
@@ -458,6 +460,9 @@ describe("Test Transit.eventHandler", () => {
 		broker.emitLocalServices.mockClear();
 		broker.started = true;
 		transit.eventHandler({
+			id: "event-12345",
+			requestID: "event-req-12345",
+			parentID: "event-parent-67890",
 			event: "user.created",
 			data: { a: 5 },
 			groups: ["users"],
@@ -469,7 +474,7 @@ describe("Test Transit.eventHandler", () => {
 		const ctx = broker.emitLocalServices.mock.calls[0][0];
 		expect(broker.emitLocalServices).toHaveBeenCalledWith(ctx);
 		expect(ctx.toJSON()).toEqual({
-			id: null,
+			id: "event-12345",
 			ackID: null,
 			cachedResult: false,
 			caller: undefined,
@@ -487,8 +492,8 @@ describe("Test Transit.eventHandler", () => {
 			params: {
 				a: 5
 			},
-			parentID: undefined,
-			requestID: undefined,
+			parentID: "event-parent-67890",
+			requestID: "event-req-12345",
 			span: null,
 			tracing: false
 		});
@@ -1417,6 +1422,7 @@ describe("Test Transit._sendRequest", () => {
 		ctx.nodeID = "remote";
 		ctx.params = { a: 5 };
 		ctx.id = "12345";
+		ctx.requestID = "req-12345";
 
 		const resolve = jest.fn();
 		const reject = jest.fn();
@@ -1442,7 +1448,7 @@ describe("Test Transit._sendRequest", () => {
 						tracing: null,
 						params: null,
 						parentID: null,
-						requestID: null,
+						requestID: "req-12345",
 						caller: null,
 						seq: 0,
 						stream: true,
@@ -1467,7 +1473,7 @@ describe("Test Transit._sendRequest", () => {
 						tracing: null,
 						params: Buffer.from("first chunk"),
 						parentID: null,
-						requestID: null,
+						requestID: "req-12345",
 						caller: null,
 						seq: 1,
 						stream: true,
@@ -1486,7 +1492,7 @@ describe("Test Transit._sendRequest", () => {
 						tracing: null,
 						params: Buffer.from("second chunk"),
 						parentID: null,
-						requestID: null,
+						requestID: "req-12345",
 						caller: null,
 						seq: 2,
 						stream: true,
@@ -1509,7 +1515,7 @@ describe("Test Transit._sendRequest", () => {
 						tracing: null,
 						params: null,
 						parentID: null,
-						requestID: null,
+						requestID: "req-12345",
 						caller: null,
 						seq: 3,
 						stream: false,
@@ -1540,7 +1546,7 @@ describe("Test Transit._sendRequest", () => {
 						tracing: null,
 						params: null,
 						parentID: null,
-						requestID: null,
+						requestID: "req-12345",
 						caller: null,
 						seq: 0,
 						stream: true,
@@ -1564,7 +1570,7 @@ describe("Test Transit._sendRequest", () => {
 						tracing: null,
 						params: Buffer.from("first chunk"),
 						parentID: null,
-						requestID: null,
+						requestID: "req-12345",
 						caller: null,
 						seq: 1,
 						stream: true,
@@ -1594,7 +1600,7 @@ describe("Test Transit._sendRequest", () => {
 						tracing: null,
 						params: null,
 						parentID: null,
-						requestID: null,
+						requestID: "req-12345",
 						caller: null,
 						seq: 2,
 						stream: false,
@@ -2066,7 +2072,7 @@ describe("Test Transit.sendNodeInfo", () => {
 
 	it("should call publish with correct params if has no nodeID & disableBalancer: true", () => {
 		// Set disableBalancer option
-		broker.options.disableBalancer = true
+		broker.options.disableBalancer = true;
 		transit.publish.mockClear();
 		broker.getLocalNodeInfo.mockClear();
 		transit.tx.makeBalancedSubscriptions.mockClear();
@@ -2094,7 +2100,7 @@ describe("Test Transit.sendNodeInfo", () => {
 
 	it("should call publish with correct params if has no nodeID & disableBalancer: false", () => {
 		// Set disableBalancer option
-		broker.options.disableBalancer = false
+		broker.options.disableBalancer = false;
 		transit.publish.mockClear();
 		broker.getLocalNodeInfo.mockClear();
 		transit.tx.makeBalancedSubscriptions.mockClear();

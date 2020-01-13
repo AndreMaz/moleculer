@@ -7,11 +7,11 @@
 "use strict";
 
 const _ 		= require("lodash");
-const Promise 	= require("bluebird");
 const kleur		= require("kleur");
 const os 	 	= require("os");
 const path 	 	= require("path");
 const fs 	 	= require("fs");
+const ExtendableError = require("es6-error");
 
 const lut = [];
 for (let i=0; i<256; i++) { lut[i] = (i<16?"0":"")+(i).toString(16); }
@@ -20,9 +20,18 @@ const RegexCache = new Map();
 
 const deprecateList = [];
 
-class TimeoutError extends Error {
+const byteMultipliers = {
+	b:  1,
+	kb: 1 << 10,
+	mb: 1 << 20,
+	gb: 1 << 30,
+	tb: Math.pow(1024, 4),
+	pb: Math.pow(1024, 5),
+};
+// eslint-disable-next-line security/detect-unsafe-regex
+const parseByteStringRe = /^((-|\+)?(\d+(?:\.\d+)?)) *(kb|mb|gb|tb|pb)$/i;
 
-}
+class TimeoutError extends ExtendableError {}
 
 function circularReplacer() {
 	const seen = new WeakSet();
@@ -118,8 +127,12 @@ const utils = {
 			// Based on https://github.com/petkaantonov/bluebird/blob/master/src/method.js#L8
 			P.method = function(fn) {
 				return function() {
-					return new Promise.resolve()
-						.then(() => fn.apply(this, arguments));
+					try {
+						const val = fn.apply(this, arguments);
+						return P.resolve(val);
+					} catch (err) {
+						return P.reject(err);
+					}
 				};
 			};
 		}
@@ -129,9 +142,13 @@ const utils = {
 			P.delay = function(ms) {
 				return new P(resolve => setTimeout(resolve, +ms));
 			};
+			P.prototype.delay = function(ms) {
+				return this.then(res => P.delay(ms).then(() => res));
+				//return this.then(res => new P(resolve => setTimeout(() => resolve(res), +ms)));
+			};
 		}
 
-		if (!_.isFunction(P.timeout)) {
+		if (!_.isFunction(P.prototype.timeout)) {
 			P.TimeoutError = TimeoutError;
 
 			P.prototype.timeout = function(ms, message) {
@@ -143,15 +160,33 @@ const utils = {
 				return P.race([
 					timeout,
 					this
-						.then(value => {
-							clearTimeout(timer);
-							return value;
-						})
-						.catch(err => {
-							clearTimeout(timer);
-							throw err;
-						})
-				]);
+				])
+					.then(value => {
+						clearTimeout(timer);
+						return value;
+					})
+					.catch(err => {
+						clearTimeout(timer);
+						throw err;
+					});
+			};
+		}
+
+		if (!_.isFunction(P.mapSeries)) {
+
+			P.mapSeries = function(arr, fn) {
+				const promFn = Promise.method(fn);
+				const res = [];
+
+				return arr.reduce((p, item, i) => {
+					return p.then(r => {
+						res[i] = r;
+						return promFn(item, i);
+					});
+				}, P.resolve()).then(r => {
+					res[arr.length] = r;
+					return res.slice(1);
+				});
 			};
 		}
 	},
@@ -301,6 +336,43 @@ const utils = {
 				}
 				return currentPath;
 			}, "");
+	},
+
+	/**
+	 * Parse a byte string to number of bytes. E.g "1kb" -> 1024
+	 * Credits: https://github.com/visionmedia/bytes.js
+	 *
+	 * @param {String} v
+	 * @returns {Number}
+	 */
+	parseByteString(v) {
+		if (typeof v === "number" && !isNaN(v)) {
+			return v;
+		}
+
+		if (typeof v !== "string") {
+			return null;
+		}
+
+		// Test if the string passed is valid
+		let results = parseByteStringRe.exec(v);
+		let floatValue;
+		let unit = "b";
+
+		if (!results) {
+			// Nothing could be extracted from the given string
+			floatValue = parseInt(v, 10);
+			if (Number.isNaN(floatValue))
+				return null;
+
+			unit = "b";
+		} else {
+			// Retrieve the value and the unit
+			floatValue = parseFloat(results[1]);
+			unit = results[4].toLowerCase();
+		}
+
+		return Math.floor(byteMultipliers[unit] * floatValue);
 	}
 };
 

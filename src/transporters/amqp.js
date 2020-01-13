@@ -7,7 +7,6 @@
 "use strict";
 
 const url = require("url");
-const Promise		= require("bluebird");
 const Transporter 	= require("./base");
 const { isPromise }	= require("../utils");
 
@@ -74,11 +73,15 @@ class AmqpTransporter extends Transporter {
 		if (typeof opts.consumeOptions !== "object")
 			opts.consumeOptions = {};
 
+		// The default behavior is to delete the queues after they haven't had any
+		// connected consumers for 2 minutes.
+		const autoDeleteQueuesAfterDefault = 2*60*1000;
+
 		opts.autoDeleteQueues =
-			opts.autoDeleteQueues === true ? 2*60*1000 :
+			opts.autoDeleteQueues === true ? autoDeleteQueuesAfterDefault :
 				typeof opts.autoDeleteQueues === "number" ? opts.autoDeleteQueues :
 					opts.autoDeleteQueues === false ? -1 :
-						-1; // Eventually we could change default
+						autoDeleteQueuesAfterDefault;
 
 		// Support for multiple URLs (clusters)
 		opts.url = Array.isArray(opts.url)
@@ -104,7 +107,7 @@ class AmqpTransporter extends Transporter {
 	 * @memberof AmqpTransporter
 	 */
 	connect(errorCallback) {
-		return new Promise((_resolve, _reject) => {
+		return new this.broker.Promise((_resolve, _reject) => {
 			let _isResolved = false;
 			const resolve = () => {
 				_isResolved = true;
@@ -226,7 +229,7 @@ class AmqpTransporter extends Transporter {
 	 */
 	disconnect() {
 		if (this.connection && this.channel && this.bindings) {
-			return Promise.all(this.bindings.map(binding => this.channel.unbindQueue(...binding)))
+			return this.broker.Promise.all(this.bindings.map(binding => this.channel.unbindQueue(...binding)))
 				.then(() => {
 					this.channelDisconnecting = this.transit.disconnecting;
 					this.connectionDisconnecting = this.transit.disconnecting;
@@ -387,11 +390,11 @@ class AmqpTransporter extends Transporter {
 			const bindingArgs = [queueName, topic, ""];
 			this.bindings.push(bindingArgs);
 
-			return Promise.all([
+			return this.broker.Promise.all([
 				this.channel.assertExchange(topic, "fanout", this.opts.exchangeOptions),
 				this.channel.assertQueue(queueName, this._getQueueOptions(cmd)),
 			])
-				.then(() => Promise.all([
+				.then(() => this.broker.Promise.all([
 					this.channel.bindQueue(...bindingArgs),
 					this.channel.consume(
 						queueName,
@@ -446,7 +449,7 @@ class AmqpTransporter extends Transporter {
 	 */
 	send(topic, data, { balanced, packet }) {
 		/* istanbul ignore next*/
-		if (!this.channel) return Promise.resolve();
+		if (!this.channel) return this.broker.Promise.resolve();
 
 		if (packet.target != null || balanced) {
 			this.channel.sendToQueue(topic, data, this.opts.messageOptions);
@@ -454,7 +457,7 @@ class AmqpTransporter extends Transporter {
 			this.channel.publish(topic, "", data, this.opts.messageOptions);
 		}
 
-		return Promise.resolve();
+		return this.broker.Promise.resolve();
 	}
 }
 
