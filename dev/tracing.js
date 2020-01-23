@@ -1,18 +1,16 @@
 "use strict";
 
-/*
-const asyncHooks = require("async_hooks");
 
 const tracer = require("dd-trace").init({
 	service: "moleculer", // shows up as Service in Datadog UI
-	//url: "http://192.168.0.181:8126",
+	url: "http://192.168.0.181:8126",
 	//debug: true,
 	samplingPriority: "USER_KEEP",
 });
 
 tracer.use("http");
 tracer.use("ioredis");
-*/
+
 
 const ServiceBroker = require("../src/service-broker");
 "use strict";
@@ -48,12 +46,12 @@ const broker = new ServiceBroker({
 					logger: console.info
 				}
 			},
-			/*{
+			{
 				type: "Datadog",
 				options: {
 					tracer
 				}
-			},*/
+			},
 			/*{
 				type: "Zipkin",
 				options: {
