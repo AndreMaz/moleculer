@@ -1,3 +1,5 @@
+<a name="Unreleased"></a>
+# [Unreleased](https://github.com/moleculerjs/moleculer/compare/v0.13.13...master)
 
 --------------------------------------------------
 <a name="0.14.0"></a>
@@ -13,7 +15,7 @@ The Node version 8 LTS lifecycle has been ended on December 31, 2019, so the min
 ## Bluebird dropped
 The Bluebird Promise library has been dropped from the project because as of Node 10 the native `Promise` implementation is [faster (2x)](https://github.com/icebob/js-perf-benchmark/blob/95803284dcb46c403eb71f2f114b76bf669189ce/suites/promise.js#L123-L133) than Bluebird.
 
-Nonetheless you can use your desired Promise library, just set the `Promise` broker options.
+Nonetheless, you can use your desired Promise library, just set the `Promise` broker options.
 
 **Using Bluebird**
 ```js
@@ -24,7 +26,7 @@ module.exports = {
     Promise: BluebirdPromise
 };
 ```
->Please note, the given Promise library will be polyfilled with `delay`, `method`, `timeout` and `mapSeries` methods (which are used inside Moleculer modules).
+>Please note, the given Promise library will be polyfilled with `delay`, `method`, `timeout` and `mapSeries` methods (which are used inside Moleculer core modules).
 
 ## Communication protocol has been changed
 The Moleculer communication protocol has been changed. The new protocol version is `4`.
@@ -1894,6 +1896,33 @@ describe("Test events", () => {
 });
 ```
 
+## Stream `objectMode` support
+Thanks for [@artur-krueger](https://github.com/artur-krueger), the request & response streams support `objectMode`, as well. You can also send Javascript objects via streams.
+
+**Example**
+
+```js
+// posts.service.js
+module.exports = {
+    name: "posts",
+
+    actions: {
+        list(ctx) {
+            const pass = new Stream.Readable({
+                objectMode: true,
+                read() {}
+            });
+
+            pass.push({ id: 1, title: "First post" });
+            pass.push({ id: 2, title: "Second post" });
+            pass.push({ id: 3, title: "Third post" });
+            
+            return pass;
+        }
+    }
+};
+```
+
 # Other notable changes
 - Kafka transporter upgrade to support kafka-node@5.
 - rename `ctx.metrics` to `ctx.tracing`.
@@ -1903,6 +1932,70 @@ describe("Test events", () => {
 - new `ctx.locals` property to store local variables in hooks or actions.
 - Context tracking watches local event handlers, as well.
 - new `ctx.mcall` method to make multiple calls.
+- new `withEvents & grouping` parameters for `$node.services` action.
+- `$node` internal service parameters has default value & conversion.
+- the Promise chaining improved in event emitting methods.
+- the heartbeat logic can be disabled by `heartbeatInterval: 0` broker option.
+- in Service instances the original schema (before applying mixins) is available via `this.originalSchema`.
+
+--------------------------------------------------
+<a name="0.13.13"></a>
+# [0.13.13](https://github.com/moleculerjs/moleculer/compare/v0.13.12...v0.13.13) (2020-02-11)
+
+## AMQP 1.0 transporter
+Thanks for [@vladir95](https://github.com/vladir95), AMQP 1.0 transporter is available.
+
+>Please note, it is an **experimental** transporter. **Do not use it in production yet!**
+
+```js
+// moleculer.config.js
+module.exports = {
+    transporter: "amqp10://activemq-server:5672"
+};
+```
+>To use this transporter install the `rhea-promise` module with `npm install rhea-promise --save` command.
+
+#### Transporter options
+Options can be passed to `rhea.connection.open()` method, the topics, the queues, and the messages themselves.
+
+**Connect to 'amqp10://guest:guest@localhost:5672'**
+```js
+// moleculer.config.js
+module.exports = {
+    transporter: "AMQP10"
+};
+```
+
+**Connect to a remote server**
+```js
+// moleculer.config.js
+module.exports = {
+    transporter: "amqp10://activemq-server:5672"
+};
+```
+
+**Connect to a remote server with options & credentials**
+```js
+// moleculer.config.js
+module.exports = {
+    transporter: {
+        url: "amqp10://user:pass@activemq-server:5672",
+        eventTimeToLive: 5000,
+        heartbeatTimeToLive: 5000,
+        connectionOptions: { // rhea connection options https://github.com/amqp/rhea#connectoptions, example:
+            ca: "", // (if using tls)
+            servername: "", // (if using tls)
+            key: "", // (if using tls with client auth)
+            cert: "" // (if using tls with client auth)
+        },
+        queueOptions: {}, // rhea queue options https://github.com/amqp/rhea#open_receiveraddressoptions
+        topicOptions: {}, // rhea queue options https://github.com/amqp/rhea#open_receiveraddressoptions
+        messageOptions: {}, // rhea message specific options https://github.com/amqp/rhea#message
+        topicPrefix: "topic://", // RabbitMq uses '/topic/' instead, 'topic://' is more common
+        prefetch: 1
+    }
+};
+```
 
 --------------------------------------------------
 <a name="0.13.12"></a>

@@ -11,6 +11,7 @@ let polyfillPromise;
 jest.mock("../../src/utils", () => ({
 	getNodeID() { return "node-1234"; },
 	generateToken: jest.fn(() => "1"),
+	humanize() { return "1"; },
 	getIpList() { return []; },
 	safetyObject(obj) { return obj; },
 	isPromise(p) {return p && p.then != null; },
@@ -24,7 +25,7 @@ const utils = require("../../src/utils");
 
 const { protectReject } = require("./utils");
 const path = require("path");
-const lolex = require("lolex");
+const lolex = require("@sinonjs/fake-timers");
 const ServiceBroker = require("../../src/service-broker");
 const Service = require("../../src/service");
 const LoggerFactory = require("../../src/logger-factory");
@@ -1976,7 +1977,7 @@ describe("Test broker.callWithoutBalancer", () => {
 			expect(ctx.nodeID).toBe("node-11");
 			expect(ctx.level).toBe(1);
 			expect(ctx.action.name).toBe("posts.find");
-			expect(ctx.params).toEqual(null);
+			expect(ctx.params).toEqual({});
 
 			expect(action.remoteHandler).toHaveBeenCalledTimes(1);
 			expect(action.remoteHandler).toHaveBeenCalledWith(ctx);
@@ -2018,7 +2019,7 @@ describe("Test broker.callWithoutBalancer", () => {
 			expect(ctx.nodeID).toBe(null);
 			expect(ctx.level).toBe(1);
 			expect(ctx.action.name).toBe("posts.find");
-			expect(ctx.params).toEqual(null);
+			expect(ctx.params).toEqual({});
 
 			expect(action.remoteHandler).toHaveBeenCalledTimes(1);
 			expect(action.remoteHandler).toHaveBeenCalledWith(ctx);

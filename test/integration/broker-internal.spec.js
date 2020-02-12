@@ -87,14 +87,15 @@ describe("Test internal services", () => {
 	it("should return service list", () => {
 		return broker.call("$node.services").then(res => {
 			expect(res).toEqual([{
-				"actions": {},
 				"name": "$node",
 				"nodes": ["node-master"],
 				"settings": {},
 				"metadata": {},
-				"version": undefined
+				"version": undefined,
+				"fullName": "$node",
+				"local": true,
+				"available": true
 			}, {
-				"actions": {},
 				"name": "greeter",
 				"nodes": ["node-master"],
 				"settings": {
@@ -103,14 +104,19 @@ describe("Test internal services", () => {
 				"metadata": {
 					"scaling": true
 				},
-				"version": undefined
+				"version": undefined,
+				"fullName": "greeter",
+				"local": true,
+				"available": true
 			}, {
-				"actions": {},
 				"name": "echo",
 				"nodes": ["node-master"],
 				"settings": {},
 				"metadata": {},
-				"version": "alpha"
+				"version": "alpha",
+				"fullName": "alpha.echo",
+				"local": true,
+				"available": true
 			}]);
 		});
 	});
@@ -120,7 +126,6 @@ describe("Test internal services", () => {
 			expect(res).toEqual([{
 				"actions": {
 					"greeter.hello": {
-						"cache": false,
 						"name": "greeter.hello",
 						"rawName": "hello",
 					},
@@ -143,11 +148,13 @@ describe("Test internal services", () => {
 				"metadata": {
 					"scaling": true
 				},
-				"version": undefined
+				"version": undefined,
+				"fullName": "greeter",
+				"local": true,
+				"available": true
 			}, {
 				"actions": {
 					"alpha.echo.reply": {
-						"cache": false,
 						"name": "alpha.echo.reply",
 						"rawName": "reply",
 					}
@@ -156,7 +163,10 @@ describe("Test internal services", () => {
 				"nodes": ["node-master"],
 				"settings": {},
 				"metadata": {},
-				"version": "alpha"
+				"version": "alpha",
+				"fullName": "alpha.echo",
+				"local": true,
+				"available": true
 			}]);
 		});
 	});
@@ -165,20 +175,22 @@ describe("Test internal services", () => {
 		return broker.call("$node.actions").then(res => {
 			expect(res).toEqual([{
 				"action": {
-					"cache": false,
 					"tracing": false,
+					"cache": false,
 					"name": "$node.list",
 					"rawName": "list",
 					"params": {
 						"onlyAvailable": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
 						},
 						"withServices": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
 						}
 					}
 				},
@@ -188,30 +200,46 @@ describe("Test internal services", () => {
 				"name": "$node.list"
 			}, {
 				"action": {
-					"cache": false,
 					"tracing": false,
+					"cache": false,
 					"name": "$node.services",
 					"rawName": "services",
 					"params": {
 						"onlyLocal": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
 						},
 						"onlyAvailable": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
 						},
 						"skipInternal": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
 						},
 						"withActions": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
+						},
+						"withEvents": {
+							"optional": true,
+							"type": "boolean",
+							"convert": true,
+							"default": false
+						},
+						"grouping": {
+							"optional": true,
+							"type": "boolean",
+							"convert": true,
+							"default": true
 						}
 					}
 				},
@@ -221,30 +249,34 @@ describe("Test internal services", () => {
 				"name": "$node.services"
 			}, {
 				"action": {
-					"cache": false,
 					"tracing": false,
+					"cache": false,
 					"name": "$node.actions",
 					"rawName": "actions",
 					"params": {
 						"onlyLocal": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
 						},
 						"onlyAvailable": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
 						},
 						"skipInternal": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
 						},
 						"withEndpoints": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
 						}
 					}
 				},
@@ -254,30 +286,34 @@ describe("Test internal services", () => {
 				"name": "$node.actions"
 			}, {
 				"action": {
-					"cache": false,
 					"tracing": false,
+					"cache": false,
 					"name": "$node.events",
 					"rawName": "events",
 					"params": {
 						"onlyLocal": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
 						},
 						"onlyAvailable": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
 						},
 						"skipInternal": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
 						},
 						"withEndpoints": {
 							"optional": true,
 							"type": "boolean",
-							"convert": true
+							"convert": true,
+							"default": false
 						}
 					}
 				},
@@ -287,8 +323,8 @@ describe("Test internal services", () => {
 				"name": "$node.events"
 			}, {
 				"action": {
-					"cache": false,
 					"tracing": false,
+					"cache": false,
 					"name": "$node.health",
 					"rawName": "health",
 				},
@@ -298,8 +334,8 @@ describe("Test internal services", () => {
 				"name": "$node.health"
 			}, {
 				"action": {
-					"cache": false,
 					"tracing": false,
+					"cache": false,
 					"name": "$node.options",
 					"rawName": "options",
 					"params": {}
@@ -310,8 +346,8 @@ describe("Test internal services", () => {
 				"name": "$node.options"
 			}, {
 				"action": {
-					"cache": false,
 					"tracing": false,
+					"cache": false,
 					"name": "$node.metrics",
 					"rawName": "metrics",
 					"params": {
@@ -326,7 +362,6 @@ describe("Test internal services", () => {
 				"name": "$node.metrics"
 			}, {
 				"action": {
-					"cache": false,
 					"name": "greeter.hello",
 					"rawName": "hello",
 				},
@@ -351,7 +386,6 @@ describe("Test internal services", () => {
 				"name": "greeter.welcome"
 			}, {
 				"action": {
-					"cache": false,
 					"name": "alpha.echo.reply",
 					"rawName": "reply",
 				},
@@ -367,7 +401,6 @@ describe("Test internal services", () => {
 		return broker.call("$node.actions", { skipInternal: true, withEndpoints: true }).then(res => {
 			expect(res).toEqual([{
 				"action": {
-					"cache": false,
 					"name": "greeter.hello",
 					"rawName": "hello",
 				},
@@ -402,7 +435,6 @@ describe("Test internal services", () => {
 				"name": "greeter.welcome"
 			}, {
 				"action": {
-					"cache": false,
 					"name": "alpha.echo.reply",
 					"rawName": "reply",
 				},

@@ -1,6 +1,6 @@
 /*
  * moleculer
- * Copyright (c) 2019 MoleculerJS (https://github.com/moleculerjs/moleculer)
+ * Copyright (c) 2020 MoleculerJS (https://github.com/moleculerjs/moleculer)
  * MIT Licensed
  */
 
@@ -44,8 +44,8 @@ class MetricRegistry {
 
 			reporter: false,
 
-			defaultBuckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
-			defaultQuantiles: [0.5, 0.9, 0.95, 0.99, 0.999],
+			defaultBuckets: [1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000], // in milliseconds
+			defaultQuantiles: [0.5, 0.9, 0.95, 0.99, 0.999], // percentage
 			defaultMaxAgeSeconds: 60,
 			defaultAgeBuckets: 10,
 			defaultAggregator: "sum"
@@ -67,7 +67,7 @@ class MetricRegistry {
 			if (this.opts.reporter) {
 				const reporters = Array.isArray(this.opts.reporter) ? this.opts.reporter : [this.opts.reporter];
 
-				this.reporter = reporters.map(r => {
+				this.reporter = _.compact(reporters).map(r => {
 					const reporter = Reporters.resolve(r);
 					reporter.init(this);
 					return reporter;

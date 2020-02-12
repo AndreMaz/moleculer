@@ -116,11 +116,21 @@ Moleculer is an open source project. It is free to use for your personal or comm
 
 Thank you very much!
 
+# For enterprise
+
+Available as part of the Tidelift Subscription.
+
+The maintainers of moleculer and thousands of other packages are working with Tidelift to deliver commercial support and maintenance for the open source dependencies you use to build your applications. Save time, reduce risk, and improve code health, while paying the maintainers of the exact dependencies you use. [Learn more.](https://tidelift.com/subscription/pkg/npm-moleculer?utm_source=npm-moleculer&utm_medium=referral&utm_campaign=enterprise&utm_term=repo)
+
 # Documentation
 You can find here [the documentation](https://moleculer.services/docs).
 
 # Changelog
 See [CHANGELOG.md](CHANGELOG.md).
+
+# Security contact information
+To report a security vulnerability, please use the [Tidelift security contact](https://tidelift.com/security).
+Tidelift will coordinate the fix and disclosure.
 
 # Contributions
 We welcome you to join to the development of Moleculer. Please read our [contribution guide](http://moleculer.services/docs/contributing.html).
@@ -132,7 +142,7 @@ Moleculer is available under the [MIT license](https://tldrlegal.com/license/mit
 [3rd party licenses](https://app.fossa.io/reports/09fc5b4f-d321-4f68-b859-8c61fe3eb6dc)
 
 # Contact
-Copyright (c) 2016-2019 MoleculerJS
+Copyright (c) 2016-2020 MoleculerJS
 
 [![@moleculerjs](https://img.shields.io/badge/github-moleculerjs-green.svg)](https://github.com/moleculerjs) [![@MoleculerJS](https://img.shields.io/badge/twitter-MoleculerJS-blue.svg)](https://twitter.com/MoleculerJS)
 

@@ -1,6 +1,6 @@
 /*
  * moleculer
- * Copyright (c) 2019 MoleculerJS (https://github.com/moleculerjs/moleculer)
+ * Copyright (c) 2020 MoleculerJS (https://github.com/moleculerjs/moleculer)
  * MIT Licensed
  */
 
@@ -300,7 +300,7 @@ class ServiceBroker {
 	registerMiddlewares(userMiddlewares) {
 		// Register user middlewares
 		if (Array.isArray(userMiddlewares) && userMiddlewares.length > 0) {
-			userMiddlewares.forEach(mw => this.middlewares.add(mw));
+			_.compact(userMiddlewares).forEach(mw => this.middlewares.add(mw));
 
 			this.logger.info(`Registered ${this.middlewares.count()} custom middleware(s).`);
 		}
@@ -411,6 +411,8 @@ class ServiceBroker {
 	 * @memberof ServiceBroker
 	 */
 	start() {
+		const startTime = Date.now();
+
 		return this.Promise.resolve()
 			.then(() => {
 				//this.tracer.restartScope();
@@ -433,10 +435,8 @@ class ServiceBroker {
 					});
 			})
 			.then(() => {
-				this.logger.info(`✔ ServiceBroker with ${this.services.length} service(s) is started successfully.`);
 				this.started = true;
 				this.metrics.set(METRIC.MOLECULER_BROKER_STARTED, 1);
-
 				this.broadcastLocal("$broker.started");
 			})
 			.then(() => {
@@ -449,6 +449,10 @@ class ServiceBroker {
 			.then(() => {
 				if (_.isFunction(this.options.started))
 					return this.options.started(this);
+			})
+			.then(() => {
+				const duration = Date.now() - startTime;
+				this.logger.info(`✔ ServiceBroker with ${this.services.length} service(s) is started successfully in ${utils.humanize(duration)}.`);
 			});
 	}
 
@@ -472,13 +476,11 @@ class ServiceBroker {
 			})
 			.then(() => {
 				// Call service `stopped` handlers
-				return this.Promise.all(this.services.map(svc => {
-					this.logger.info(`Stopping '${svc.fullName}' service...`);
-					return svc._stop.call(svc);
-				})).catch(err => {
+				return this.Promise.all(this.services.map(svc => svc._stop.call(svc)))
+					.catch(err => {
 					/* istanbul ignore next */
-					this.logger.error("Unable to stop all services.", err);
-				});
+						this.logger.error("Unable to stop all services.", err);
+					});
 			})
 			.then(() => {
 				if (this.transit) {
@@ -1075,6 +1077,9 @@ class ServiceBroker {
 	 * @memberof ServiceBroker
 	 */
 	callWithoutBalancer(actionName, params, opts = {}) {
+		if (params === undefined)
+			params = {}; // Backward compatibility
+
 		let nodeID = null;
 		let endpoint = null;
 		if (typeof actionName !== "string") {
@@ -1214,7 +1219,7 @@ class ServiceBroker {
 	 * @param {string} eventName
 	 * @param {any?} payload
 	 * @param {Object?} opts
-	 * @returns
+	 * @returns {Promise<any>}
 	 *
 	 * @memberof ServiceBroker
 	 */
@@ -1226,6 +1231,8 @@ class ServiceBroker {
 
 		if (opts.groups && !Array.isArray(opts.groups))
 			opts.groups = [opts.groups];
+
+		const promises = [];
 
 		const ctx = this.ContextFactory.create(this, null, payload, opts);
 		ctx.eventName = eventName;
@@ -1249,7 +1256,7 @@ class ServiceBroker {
 				if (ep.id == this.nodeID) {
 					// Local service, call handler
 					const newCtx = ctx.copy(ep);
-					this.registry.events.callEventHandler(newCtx);
+					promises.push(this.registry.events.callEventHandler(newCtx));
 				} else {
 					// Remote service
 					const e = groupedEP[ep.id];
@@ -1268,11 +1275,11 @@ class ServiceBroker {
 				_.forIn(groupedEP, item => {
 					const newCtx = ctx.copy(item.ep);
 					newCtx.eventGroups = item.groups;
-					return this.transit.sendEvent(newCtx);
+					promises.push(this.transit.sendEvent(newCtx));
 				});
-
-				return;
 			}
+
+			return this.Promise.all(promises);
 
 		} else if (this.transit) {
 			// Disabled balancer case
@@ -1296,8 +1303,8 @@ class ServiceBroker {
 	 *
 	 * @param {string} eventName
 	 * @param {any?} payload
-	 * @param {Object?} groups
-	 * @returns
+	 * @param {Object?} opts
+	 * @returns {Promise}
 	 *
 	 * @memberof ServiceBroker
 	 */
@@ -1309,6 +1316,8 @@ class ServiceBroker {
 
 		if (opts.groups && !Array.isArray(opts.groups))
 			opts.groups = [opts.groups];
+
+		const promises = [];
 
 		this.logger.debug(`Broadcast '${eventName}' event`+ (opts.groups ? ` to '${opts.groups.join(", ")}' group(s)` : "") + ".");
 
@@ -1325,7 +1334,7 @@ class ServiceBroker {
 				endpoints.forEach(ep => {
 					if (ep.id != this.nodeID) {
 						const newCtx = ctx.copy(ep);
-						return this.transit.sendEvent(newCtx);
+						promises.push(this.transit.sendEvent(newCtx));
 					}
 				});
 			} else {
@@ -1338,7 +1347,7 @@ class ServiceBroker {
 				}
 
 				if (groups.length == 0)
-					return;
+					return; // Return here because balancer disabled, so we can't call the local services.
 
 				const newCtx = ctx.copy();
 				newCtx.eventGroups = groups;
@@ -1347,7 +1356,9 @@ class ServiceBroker {
 		}
 
 		// Send to local services
-		return this.broadcastLocal(eventName, payload, opts);
+		promises.push(this.broadcastLocal(eventName, payload, opts));
+
+		return this.Promise.all(promises);
 	}
 
 	/**

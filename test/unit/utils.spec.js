@@ -1,6 +1,6 @@
 const utils = require("../../src/utils");
 const { protectReject } = require("./utils");
-const lolex = require("lolex");
+const lolex = require("@sinonjs/fake-timers");
 
 describe("Test utils.humanize", () => {
 
@@ -212,6 +212,16 @@ describe("Test utils.dotSet", () => {
 		expect(result.a).toBe(1);
 		expect(result.b.c).toBe(2);
 		expect(result.nested.variable).toBe("hello world");
+	});
+
+	it("should set nested value if the current value is null", () => {
+		const obj = {
+			a: 1,
+			b: null,
+		};
+		const result = utils.dotSet(obj, "b.c", "hello world");
+		expect(result.a).toBe(1);
+		expect(result.b.c).toBe("hello world");
 	});
 
 	it("should replace values", () => {
