@@ -112,6 +112,7 @@ const defaultOptions = {
 
 	replCommands: null,
 	replDelimiter: null,
+	replLocation: "moleculer-repl",
 
 	metadata: {},
 
@@ -562,7 +563,7 @@ class ServiceBroker {
 	repl() {
 		let repl;
 		try {
-			repl = require("moleculer-repl");
+			repl = require(this.options.replLocation);
 		}
 		catch (error) {
 			console.error("The 'moleculer-repl' package is missing. Please install it with 'npm install moleculer-repl' command."); // eslint-disable-line no-console
