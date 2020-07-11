@@ -27,6 +27,6 @@ broker.createService({
 
 broker.start()
 	.then(() => broker.repl())
-	.then(() => broker.call("greeter.welcome", { name: "Icebob" }))
+	.then(() => broker.call("greeter.welcome"))
 	.then(res => broker.logger.info("Result:", res))
 	.catch(err => broker.logger.error(err));
