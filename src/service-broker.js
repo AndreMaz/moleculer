@@ -110,9 +110,18 @@ const defaultOptions = {
 
 	middlewares: null,
 
+	// Legacy repl config location
 	replCommands: null,
 	replDelimiter: null,
 	replLocation: "moleculer-repl",
+	
+	repl: {
+		type: "shargs", // vorpal
+		options: {
+			delimiter: 'mol',
+			customCommands: null
+		}
+	},
 
 	metadata: {},
 
@@ -575,13 +584,25 @@ class ServiceBroker {
 		}
 
 		if (repl)
-		{
-			let opts = null;
+		{	
+			// Default repl configs options
+			let replConfigs = this.options.repl;
+			
+			// Legacy configs location
 			const delimiter = this.options.replDelimiter;
 			const customCommands = this.options.replCommands;
-			delimiter && (opts = { delimiter });
-			customCommands && (opts = { ...opts,customCommands });
-			return repl(this, opts);
+			
+			// Move them into new location
+			if (delimiter)
+				replConfigs.options.delimiter = delimiter
+			
+			if (customCommands)
+				replConfigs.options.customCommands = customCommands
+
+			// delimiter && (opts = { delimiter });
+			// customCommands && (opts = { ...opts,customCommands });
+
+			return repl(this, replConfigs);
 		}
 	}
 
