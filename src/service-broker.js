@@ -591,8 +591,12 @@ class ServiceBroker {
 			// Legacy configs location
 			const delimiter = this.options.replDelimiter;
 			const customCommands = this.options.replCommands;
+
+			// If either of the commands is set then roll back to vorpal
+			if (delimiter || customCommands)
+				replConfigs.type = 'vorpal'
 			
-			// Move them into new location
+			// Move old configs into new location
 			if (delimiter)
 				replConfigs.options.delimiter = delimiter
 			
